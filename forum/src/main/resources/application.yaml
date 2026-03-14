@@ -1,0 +1,206 @@
+# Spring 核心配置
+spring:
+    # RabbitMQ 配置
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+    virtual-host: /
+      # 消息确认配置（可选，生产建议开启）
+    listener:
+      simple:
+        acknowledge-mode: auto  # 自动确认
+        prefetch: 10           # 限流，防止消息暴冲
+  ai:
+    dashscope:
+      api-key: sk-19b7a926d3fc488383b87efd8ec81f7a
+      chat:
+        options:
+          model: qwen-plus
+      embedding:
+        options:
+          model: text-embedding-v1
+    openai: #openai配置
+      base-url: https://dashscope.aliyuncs.com/compatible-mode #阿里百炼api地址
+      #      base-url: https://api.chatanywhere.tech #api地址
+      api-key: sk-19b7a926d3fc488383b87efd8ec81f7a #读取环境变量中的阿里百炼 api key
+      #      api-key: ${OPENAI_API_KEY} #读取环境变量中的api key
+      chat:
+        options:
+          model: qwen-plus #阿里百炼 模型名称
+        enabled: false #关闭OpenAI配置
+  #          model: gpt-3.5-turbo #模型名称
+    vectorstore:
+      pgvector:
+        # 这里单独配置 pg 连接！不影响主数据源！
+        database-url: jdbc:postgresql://localhost:5432/postgres
+        database-username: postgres
+        database-password: root
+
+
+  # MVC配置已简化，避免静态资源映射问题
+  # 应用名称
+  application:
+    name: forum-server
+  # 数据库配置
+  datasource:
+    # 驱动类（MySQL 8.0+ 用 com.mysql.cj.jdbc.Driver，5.x 用 com.mysql.jdbc.Driver）
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    # 数据库连接地址（替换为你的数据库IP、端口、库名）
+    url: jdbc:mysql://127.0.0.1:3306/zcy_forum?useUnicode=true&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&rewriteBatchedStatements=true
+    # 数据库账号/密码（替换为你的实际信息）
+    username: root
+    password: root
+    # 连接池配置（HikariCP，Spring Boot 默认）
+    hikari:
+      # 最小空闲连接数
+      minimum-idle: 5
+      # 最大连接数
+      maximum-pool-size: 20
+      # 连接超时时间（毫秒）
+      connection-timeout: 30000
+      # 连接最大存活时间（毫秒）
+      max-lifetime: 1800000
+      # 连接测试查询
+      connection-test-query: SELECT 1
+  # Redis 配置
+  data:
+    redis:
+      # Redis 地址（替换为你的实际IP/端口）
+      host: 127.0.0.1
+      port: 6379
+      # Redis 密码（无密码则注释此行）
+      # 数据库索引（默认0）
+      database: 0
+      # 连接池配置
+      lettuce:
+        pool:
+          # 最大活跃连接数
+          max-active: 8
+          # 最大空闲连接数
+          max-idle: 8
+          # 最小空闲连接数
+          min-idle: 0
+          # 连接等待时间（毫秒）
+          max-wait: -1
+      # 连接超时时间
+      timeout: 5000
+  # 日期格式化
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: Asia/Shanghai
+  # 文件上传配置（适配论坛附件/头像上传）
+  servlet:
+    multipart:
+      # 单个文件最大大小
+      max-file-size: 10MB
+      # 单次请求最大文件大小
+      max-request-size: 50MB
+
+# 服务器配置
+server:
+  # 端口
+  port: 8080
+  # 编码
+  servlet:
+    encoding:
+      charset: utf-8
+      force: true
+  # Tomcat 配置
+  tomcat:
+    # 最大线程数
+    threads:
+      max: 100
+    # 连接超时时间
+    connection-timeout: 30000
+
+# MyBatis-Plus 配置
+mybatis-plus:
+  # Mapper XML 文件路径
+  mapper-locations: classpath:mapper/**/*.xml
+  # 实体类别名包路径（替换为你的项目实体包）
+  type-aliases-package: com.forum.entity
+  # 全局配置
+  global-config:
+    db-config:
+      # 主键类型（AUTO-自增，NONE-雪花算法，INPUT-手动输入）
+      id-type: AUTO
+      # 逻辑删除字段名（适配我们设计的 deleted_at 字段）
+#      logic-delete-field: deletedAt
+#      # 逻辑删除-未删除值
+#      logic-not-delete-value: null
+#      # 逻辑删除-已删除值
+#      logic-delete-value: now()
+      # 表名前缀（如果你的表都有前缀如 t_，可配置此处，否则注释）
+      # table-prefix: t_
+  # 配置项
+  configuration:
+    # 开启驼峰命名转换（如 user_id -> userId）
+    map-underscore-to-camel-case: true
+    # 开启日志（开发环境开启，生产环境关闭）
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    # 懒加载
+    lazy-loading-enabled: false
+    # 关闭一级缓存
+    local-cache-scope: STATEMENT
+
+# 日志配置
+logging:
+  level:
+    # 自定义包日志级别（替换为你的项目包名）
+    com.zcy.forum: debug
+    # MyBatis 日志级别
+    com.baomidou.mybatisplus: info
+    # 数据库驱动日志级别
+    com.mysql.cj.jdbc: warn
+    com.zcy.forum.handler: debug
+  # 日志文件路径（生产环境建议配置）
+  file:
+    path: ./logs/forum-server
+#  pattern:
+#    # 控制台日志格式
+#    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{50} - %msg%n"
+#    # 文件日志格式
+#    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{50} - %msg%n"
+
+# 自定义配置（可根据业务扩展）
+forum:
+  # 文件上传路径（替换为你的实际路径）
+  upload:
+    path: ./uploads/
+    # 访问前缀（Nginx 配置的静态资源路径）
+  # 敏感词过滤开关
+  sensitive:
+    enable: true
+  # 积分配置
+  point:
+    # 签到基础积分
+    sign-base: 10
+    # 连续签到额外积分
+    sign-continuity: 5
+
+  jwt:
+    # 密钥（至少32位，建议随机生成，生产环境需加密存储）
+    secret: forum-jwt-secret-2026-12345678901234567890123456
+    # 令牌过期时间（小时），默认72小时
+    expire-hours: 72
+    # 刷新令牌过期时间（小时），默认7天
+    refresh-expire-hours: 168
+    # 请求头中令牌的key
+    header: Authorization
+    # 令牌前缀（前端传值格式：Bearer {token}）
+    prefix: Bearer
+knife4j:
+  enable: true
+  setting:
+    language: zh-CN # 中文界面
+    enable-swagger-models: true # 显示模型
+    enable-document-manage: true # 启用文档管理
+
+# MinIO 配置
+minio:
+  endpoint: http://127.0.0.1:9000  # 本地地址，服务器替换为公网IP:9000
+  accessKey: minioadmin            # 默认账号
+  secretKey: minioadmin            # 默认密码
+  bucketName: avatar               # 已创建的桶名
