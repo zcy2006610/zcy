@@ -39,31 +39,25 @@ spring:
         database-password: root
 
 
+
   # MVC配置已简化，避免静态资源映射问题
   # 应用名称
   application:
     name: forum-server
   # 数据库配置
   datasource:
-    # 驱动类（MySQL 8.0+ 用 com.mysql.cj.jdbc.Driver，5.x 用 com.mysql.jdbc.Driver）
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    # 数据库连接地址（替换为你的数据库IP、端口、库名）
-    url: jdbc:mysql://127.0.0.1:3306/zcy_forum?useUnicode=true&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&rewriteBatchedStatements=true
-    # 数据库账号/密码（替换为你的实际信息）
-    username: root
-    password: root
-    # 连接池配置（HikariCP，Spring Boot 默认）
-    hikari:
-      # 最小空闲连接数
-      minimum-idle: 5
-      # 最大连接数
-      maximum-pool-size: 20
-      # 连接超时时间（毫秒）
-      connection-timeout: 30000
-      # 连接最大存活时间（毫秒）
-      max-lifetime: 1800000
-      # 连接测试查询
-      connection-test-query: SELECT 1
+      primary:
+        url: jdbc:mysql://localhost:3306/forum?useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+        username: root
+        password: root
+        driver-class-name: com.mysql.cj.jdbc.Driver
+
+      # 第二个数据源：PostgreSQL（向量库）
+      secondary:
+        url: jdbc:postgresql://localhost:5432/vector_db
+        username: postgres
+        password: root
+        driver-class-name: org.postgresql.Driver
   # Redis 配置
   data:
     redis:
