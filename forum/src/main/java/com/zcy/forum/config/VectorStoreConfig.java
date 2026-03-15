@@ -21,7 +21,7 @@ public class VectorStoreConfig {
     private String apiKey;
     @Bean
     @Primary
-    public VectorStore myVectorStore(@Qualifier("secondaryJdbcTemplate")JdbcTemplate jdbcTemplate, EmbeddingModel embeddingModel) {
+    public VectorStore myVectorStore(@Qualifier("secondaryJdbcTemplate")JdbcTemplate jdbcTemplate,@Qualifier("myEmbeddingModel") EmbeddingModel embeddingModel) {
         return PgVectorStore.builder(jdbcTemplate,embeddingModel)
                 .dimensions(1024)
                 .indexType(PgVectorStore.PgIndexType.HNSW)
@@ -30,7 +30,8 @@ public class VectorStoreConfig {
     }
 
     @Bean
-    public EmbeddingModel embeddingModel() {
+    @Primary
+    public EmbeddingModel myEmbeddingModel() {
         return new DashScopeEmbeddingModel(
                 new DashScopeApi(apiKey),
                 MetadataMode.EMBED,
@@ -38,6 +39,7 @@ public class VectorStoreConfig {
     }
 
     @Bean
+    @Primary
     public TokenTextSplitter tokenTextSplitter() {
         return TokenTextSplitter.builder()
                 .withChunkSize(512)          // 每个文本块大小（推荐 512，适配1024维向量）

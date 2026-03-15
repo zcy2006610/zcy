@@ -1,5 +1,6 @@
 package com.zcy.forum.controller;
 
+import com.zcy.forum.annotation.RateLimit;
 import com.zcy.forum.service.impl.RagService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -22,7 +23,7 @@ public class RagController {
     @Operation(summary = "文本向量化")
     public String embedDoc() {
         // 把你的文档放在 resources 下
-        ragService.embedDocumentToVectorStore("classpath:doc/我的知识库.txt");
+        ragService.embedDocumentToVectorStore("classpath:doc/标签.txt");
         return "向量化完成";
     }
 
@@ -35,6 +36,7 @@ public class RagController {
 
     // 3. RAG 问答
     @GetMapping("/rag")
+    @RateLimit
     @Operation(summary = "rag检索问答")
     public String rag(@RequestParam String question) {
         return ragService.ragChat(question);

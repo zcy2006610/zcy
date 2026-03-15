@@ -31,4 +31,6 @@ public interface AIService {
     String  polishText(ChatTextDTO textDTO);
 
     boolean reviewPostV2(PostReviewDTO reviewDTO);
+
+    List<String> Classify(ChatTextDTO textDTO);
 }

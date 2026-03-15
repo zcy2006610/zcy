@@ -81,7 +81,11 @@ public class AIServiceController {
         return Result.ok(aiService.polishText(textDTO));
     }
 
-    
+    @PostMapping("/tag")
+    @Operation(summary = "AI内容打标签")
+    public Result<List<String>> tags(@RequestBody ChatTextDTO textDTO){
+        return Result.ok(aiService.Classify(textDTO));
+    }
 
 
 

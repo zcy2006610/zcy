@@ -50,7 +50,7 @@ public class AIServiceImpl implements AIService {
     private ChatClient chatClient;
 
     @Autowired
-    private AIServiceMapper aiServiceMapper;
+    private RagService ragService;
 
     @Autowired
     private ChatConversationMapper conversationMapper;
@@ -295,10 +295,12 @@ public class AIServiceImpl implements AIService {
         if(StrUtil.isBlank(content)){
             throw new RuntimeException("帖子审核内容为空");
         }
+        //先使用DFA算法跑一边
         List<String> first = SensitiveWordHelper.findAll(content);
         if(CollectionUtil.isNotEmpty(first)){
             return false;
         }
+        //第二遍仍未命中高危词直接放行
         content = TextNormalizeUtils.normalize(content);
         List<String> two =SensitiveWordHelper.findAll(content);
         if(CollectionUtil.isEmpty(two)){
@@ -306,9 +308,44 @@ public class AIServiceImpl implements AIService {
         }
         reviewDTO.setContent(content);
         //调用AI安全审核接口(暂时未接入阿里云安全内容审核接口）
-        //用普通大模型提示词工程完成审核
+        //暂时用普通大模型提示词工程完成审核
         //TODO
         return reviewPostV1(reviewDTO);
+    }
+
+    @Override
+    public List<String> Classify(ChatTextDTO textDTO) {
+        String question = textDTO.getText();
+        if(StrUtil.isBlank(question)){
+            return Collections.emptyList();
+        }
+
+        List<String> similarDocuments = ragService.searchSimilarDocuments(question, 3);
+        if(CollectionUtil.isEmpty(similarDocuments)){
+            return Collections.emptyList();
+        }
+        String context = String.join("\n", similarDocuments);
+        String prompt = """
+                你是一个专业的论坛AI助手 请你根据上下文结合用户内容来打标签
+                注意！！！！！标签只能是向量库中已有的 不能自己擅自添加
+                严格按照我的回复格式来
+                回复格式:标签1,标签2,标签3
+                
+                上下文：
+                %s
+                
+               
+                """.formatted(context);
+        String res = chatClient.prompt()
+                .system(prompt)
+                .user(question)
+                .call()
+                .content();
+        res=StrUtil.isNotBlank(res)?res:"";
+        List<String> tagList = Arrays.asList(res.split(","));
+        return CollectionUtil.isNotEmpty(tagList)?tagList:Collections.emptyList();
+
+
     }
 
 

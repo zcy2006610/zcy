@@ -52,7 +52,7 @@ public class RagService {
         // 从 PGVector 检索最相似的 topK 条
         SearchRequest request = SearchRequest.builder().topK(topK)
                 .query(query)
-                .similarityThreshold(0.5)
+                .similarityThreshold(0.2)
                 .build();
         List<Document> similarDocs = vectorStore.similaritySearch(request);
 
@@ -67,20 +67,19 @@ public class RagService {
     // ====================== 3. RAG 问答（检索 + 大模型） ======================
     public String ragChat(String userQuestion) {
         // 1. 检索相关知识
-        List<String> contextList = searchSimilarDocuments(userQuestion, 3);
+        List<String> contextList = searchSimilarDocuments(userQuestion, 4);
         String context = String.join("\n", contextList);
 
         // 2. 构造 RAG 提示词
         String prompt = """
                 你是一个专业的问答助手，请仅根据提供的上下文回答问题。
                 上下文：
-                {context}
+                %s
                 
-                用户问题：{question}
+                用户问题：%s
                 
                 回答：
-                """;
-
+                """.formatted(context,userQuestion);
         // 3. 调用大模型生成回答
         return chatClient.prompt()
                 .system(prompt)
