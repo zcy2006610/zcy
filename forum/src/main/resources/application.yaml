@@ -47,17 +47,27 @@ spring:
   # 数据库配置
   datasource:
       primary:
-        url: jdbc:mysql://localhost:3306/forum?useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+        url: jdbc:mysql://localhost:3306/zcy_forum?useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
         username: root
         password: root
         driver-class-name: com.mysql.cj.jdbc.Driver
+        hikari:
+          minimum-idle: 1
+          maximum-pool-size: 5
+          auto-commit: true
 
-      # 第二个数据源：PostgreSQL（向量库）
+
+    # 第二个数据源：PostgreSQL（向量库）
       secondary:
         url: jdbc:postgresql://localhost:5432/vector_db
         username: postgres
         password: root
         driver-class-name: org.postgresql.Driver
+        hikari:
+          minimum-idle: 1
+          maximum-pool-size: 5
+          auto-commit: true
+
   # Redis 配置
   data:
     redis:

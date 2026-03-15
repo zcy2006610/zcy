@@ -8,20 +8,23 @@ import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.github.houbb.sensitive.word.core.SensitiveWordHelper;
+import com.zcy.forum.common.PageResult;
+import com.zcy.forum.common.SuggestWord;
 import com.zcy.forum.constant.ChatEventTypeEnum;
 import com.zcy.forum.constant.Constant;
 import com.zcy.forum.constant.ResultConstant;
-import com.zcy.forum.domain.dto.ChatDTO;
-import com.zcy.forum.domain.dto.ChatStopDTO;
-import com.zcy.forum.domain.dto.ChatTextDTO;
-import com.zcy.forum.domain.dto.PostReviewDTO;
+import com.zcy.forum.domain.dto.*;
 import com.zcy.forum.domain.entity.ChatConversation;
 import com.zcy.forum.domain.entity.ChatMessage;
+import com.zcy.forum.domain.entity.SearchHistory;
+import com.zcy.forum.domain.entity.SearchSuggest;
 import com.zcy.forum.domain.vo.ChatEventVO;
 import com.zcy.forum.domain.vo.ChatMessageVO;
-import com.zcy.forum.mapper.AIServiceMapper;
-import com.zcy.forum.mapper.ChatConversationMapper;
-import com.zcy.forum.mapper.ChatMessageMapper;
+import com.zcy.forum.domain.vo.PostsVo;
+import com.zcy.forum.mapper.primary.ChatConversationMapper;
+import com.zcy.forum.mapper.primary.ChatMessageMapper;
+import com.zcy.forum.mapper.primary.SearchHistoryMapper;
+import com.zcy.forum.mapper.primary.SearchSuggestMapper;
 import com.zcy.forum.service.AIService;
 import com.zcy.forum.utils.TextNormalizeUtils;
 import com.zcy.forum.utils.ToolResultHolder;
@@ -40,6 +43,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 @lombok.extern.slf4j.Slf4j
 @Slf4j
@@ -66,6 +70,12 @@ public class AIServiceImpl implements AIService {
 
     @Autowired
     private ChatConversationMapper chatConversationMapper;
+
+    @Autowired
+    private SearchHistoryMapper historyMapper;
+
+    @Autowired
+    private SearchSuggestMapper suggestMapper;
 
     // 定义5位数的最小值和最大值
     private static final int MIN_5_DIGIT = 10000;
@@ -279,16 +289,6 @@ public class AIServiceImpl implements AIService {
     }
 
     @Override
-    public String generateText(ChatTextDTO textDTO) {
-        return null;
-    }
-
-    @Override
-    public String polishText(ChatTextDTO textDTO) {
-        return null;
-    }
-
-    @Override
     public boolean reviewPostV2(PostReviewDTO reviewDTO){
         //
         String content = reviewDTO.getContent();
@@ -346,6 +346,130 @@ public class AIServiceImpl implements AIService {
         return CollectionUtil.isNotEmpty(tagList)?tagList:Collections.emptyList();
 
 
+    }
+
+    @Override
+    public List<String> link(ChatTextDTO textDTO) {
+        String userQuestion = textDTO.getText();
+        Long userId = UserContextHolder.getUserId();
+
+        // 1. 登录判断
+        if (userId == null) {
+            throw new RuntimeException("用户未登录");
+        }
+        if (StrUtil.isBlank(userQuestion)) {
+            return Collections.emptyList();
+        }
+
+        // ======================
+        // 【AI 处理：纠错 + 扩展关键词】
+        // ======================
+        List<String> similarDocs = ragService.searchSimilarDocuments(userQuestion, 3);
+        String integration = String.join("\n", similarDocs);
+
+        String prompt = """
+            你是智能搜索助手，你的任务如下
+            1. 纠正错别字、语病
+            2. 分析用户意图
+            3. 扩展 3-5 个关键词
+            最后只输出扩展关键词即可
+            输出格式：关键词1,关键词2,关键词3
+           
+            上下文：%s
+            用户输入：%s
+            """.formatted(integration, userQuestion);
+
+        String aiResult = chatClient.prompt().user(prompt).call().content();
+        List<String> aiKeywords = Arrays.stream(aiResult.split(","))
+                .map(String::trim)
+                .filter(StrUtil::isNotBlank)
+                .collect(Collectors.toList());
+
+        // ======================
+        // 渠道1：用户历史（权重 50%）
+        // ======================
+        List<SuggestWord> userList = new ArrayList<>();
+        LambdaQueryWrapper<SearchHistory> historyWrapper = new LambdaQueryWrapper<>();
+        historyWrapper.eq(SearchHistory::getUserId, userId)
+                .in(SearchHistory::getKeyword, aiKeywords)
+                .orderByDesc(SearchHistory::getSearchCount)
+                .orderByDesc(SearchHistory::getUpdateTime)
+                .last("LIMIT 5");
+
+        List<SearchHistory> historyList = historyMapper.selectList(historyWrapper);
+        if (CollUtil.isNotEmpty(historyList)) {
+            for (SearchHistory h : historyList) {
+                double score = 50 + (h.getSearchCount() * 0.5); // 基础50分 + 次数加分
+                userList.add(new SuggestWord(h.getKeyword(), score));
+            }
+        }
+
+        // ======================
+        // 渠道2：热门搜索（权重 35%）
+        // ======================
+        List<SuggestWord> hotList = new ArrayList<>();
+        LambdaQueryWrapper<SearchSuggest> suggestWrapper = new LambdaQueryWrapper<>();
+        suggestWrapper.and(w -> w.in(SearchSuggest::getKeyword, aiKeywords)
+                        .or()
+                        .in(SearchSuggest::getPinyin, aiKeywords))
+                .orderByDesc(SearchSuggest::getSearchCount)
+                .last("LIMIT 5");
+
+        List<SearchSuggest> suggestList = suggestMapper.selectList(suggestWrapper);
+        if (CollUtil.isNotEmpty(suggestList)) {
+            for (SearchSuggest s : suggestList) {
+                double score = 35 + (s.getSearchCount() * 0.3);
+                hotList.add(new SuggestWord(s.getKeyword(), score));
+            }
+        }
+
+        // ======================
+        // 渠道3：AI扩展词（权重15%）
+        // ======================
+        List<SuggestWord> aiList = aiKeywords.stream()
+                .map(word -> new SuggestWord(word, 15.0)).toList();
+
+        // ======================
+        // 【核心：合并所有渠道 + 加权排序】
+        // ======================
+        List<SuggestWord> allList = new ArrayList<>();
+        allList.addAll(userList);
+        allList.addAll(hotList);
+        allList.addAll(aiList);
+
+        // 去重 + 按得分倒序
+        Map<String, SuggestWord> map = new LinkedHashMap<>();
+        for (SuggestWord word : allList) {
+            if (!map.containsKey(word.getWord())) {
+                map.put(word.getWord(), word);
+            }
+        }
+        // 最终排序：得分高 → 低
+        return  map.values().stream()
+                .sorted((a, b) -> Double.compare(b.getScore(), a.getScore()))
+                .limit(3)
+                .map(SuggestWord::getWord)
+                .collect(Collectors.toList());
+
+    }
+
+    @Override
+    public List<PostsVo> recommend() {
+        return null;
+    }
+    @Override
+    public PageResult<PostsVo> AISearch(PageQueryDTO queryDTO) {
+        return null;
+    }
+
+    @Override
+    public String generateText(ChatTextDTO textDTO) {
+        return null;
+    }
+
+    @Override
+    public String polishText(ChatTextDTO textDTO) {
+        return null;
     }
 
 

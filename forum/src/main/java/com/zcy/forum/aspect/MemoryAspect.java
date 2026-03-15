@@ -2,7 +2,7 @@ package com.zcy.forum.aspect;
 import com.zcy.forum.annotation.SessionMemory;
 import com.zcy.forum.domain.dto.ChatDTO;
 import com.zcy.forum.domain.entity.ChatMessage;
-import com.zcy.forum.mapper.ChatMessageMapper;
+import com.zcy.forum.mapper.primary.ChatMessageMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;

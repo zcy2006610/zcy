@@ -5,7 +5,7 @@ import com.zcy.forum.annotation.RequirePermission;
 import com.zcy.forum.constant.LoginConstant;
 import com.zcy.forum.constant.ResultConstant;
 import com.zcy.forum.domain.entity.Users;
-import com.zcy.forum.mapper.UserMapper;
+import com.zcy.forum.mapper.primary.UserMapper;
 import com.zcy.forum.utils.JwtTokenUtil;
 import com.zcy.forum.utils.UserContextHolder;
 import lombok.extern.slf4j.Slf4j;

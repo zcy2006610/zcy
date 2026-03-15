@@ -1,14 +1,13 @@
 package com.zcy.forum.consumer;
 
 import cn.hutool.core.bean.BeanUtil;
-import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.zcy.forum.config.RabbitMqConfig;
 import com.zcy.forum.domain.dto.PostReviewDTO;
 import com.zcy.forum.domain.entity.Notifications;
 import com.zcy.forum.domain.entity.Posts;
 import com.zcy.forum.domain.vo.ReviewResultVO;
-import com.zcy.forum.mapper.NotifyMapper;
-import com.zcy.forum.mapper.PostMapper;
+import com.zcy.forum.mapper.primary.NotifyMapper;
+import com.zcy.forum.mapper.primary.PostMapper;
 import com.zcy.forum.service.AIService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;

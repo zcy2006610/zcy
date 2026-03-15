@@ -5,16 +5,14 @@ import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.convert.Convert;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.zcy.forum.domain.entity.Categories;
 import com.zcy.forum.domain.vo.CategoriesVo;
-import com.zcy.forum.mapper.CategoryMapper;
-import com.zcy.forum.mapper.PostMapper;
+import com.zcy.forum.mapper.primary.CategoryMapper;
+import com.zcy.forum.mapper.primary.PostMapper;
 import com.zcy.forum.service.CategoryService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 

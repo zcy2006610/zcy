@@ -2,11 +2,9 @@ package com.zcy.forum.tool;
 
 import cn.hutool.core.convert.Convert;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.zcy.forum.constant.Constant;
 import com.zcy.forum.domain.entity.Posts;
 import com.zcy.forum.domain.vo.HotPostVO;
-import com.zcy.forum.mapper.PostMapper;
+import com.zcy.forum.mapper.primary.PostMapper;
 import com.zcy.forum.utils.ToolResultHolder;
 import org.springframework.ai.chat.model.ToolContext;
 import org.springframework.ai.tool.annotation.Tool;
@@ -19,7 +17,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 @Component
 public class PostTool {
