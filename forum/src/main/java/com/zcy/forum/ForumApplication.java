@@ -13,7 +13,7 @@ import org.springframework.context.annotation.EnableAspectJAutoProxy;
         DataSourceAutoConfiguration.class,
         SqlInitializationAutoConfiguration.class
 
-})
+},scanBasePackages = "com.zcy.forum")
 @MapperScan(basePackages = "com.zcy.forum.mapper")
 public class ForumApplication {
 

@@ -108,7 +108,7 @@ public class AIServiceImpl implements AIService {
         String message = chatDTO.getMessage();
         String redisKey = "session:memory:" + userId + ":" + currentSessionId;
 
-        // 1. 修复点：使用线程安全的StringBuffer（或AtomicReference）存储AI回复
+        //1. 修复点：使用线程安全的StringBuffer（或AtomicReference）存储AI回复
         StringBuffer aiReplyBuffer = new StringBuffer("AI: ");
         // 2. 从Redis获取历史记录
         List<String> history = redisTemplate.opsForList().range(redisKey, 0, -1);
@@ -464,12 +464,37 @@ public class AIServiceImpl implements AIService {
 
     @Override
     public String generateText(ChatTextDTO textDTO) {
-        return null;
+        if (StrUtil.isBlank(textDTO.getText())) {
+            throw new IllegalArgumentException("输入内容不能为空");
+        }
+        
+        String content = this.chatClient.prompt()
+                .system(p -> p.text("你是一个专业的论坛内容创作助手，擅长根据用户的需求生成高质量的帖子内容。请根据用户的输入，" +
+                        "生成一篇结构清晰、内容丰富、语言流畅的帖子。你需要严格控制长度在30以内 并且除了给用户创作后不需要你再回复任何一个字 " +
+                        "不需要询问用户还需要其他帮助什么的"))
+                .user(textDTO.getText())
+                .call()
+                .content();
+        
+        log.info("AI帮写：输入={}, 输出={}", textDTO.getText(), content);
+        return content;
     }
 
     @Override
     public String polishText(ChatTextDTO textDTO) {
-        return null;
+        if (StrUtil.isBlank(textDTO.getText())) {
+            throw new IllegalArgumentException("输入内容不能为空");
+        }
+        
+        String content = this.chatClient.prompt()
+                .system(p -> p.text("你是一个专业的文本润色助手，擅长优化帖子的标题和内容。请对用户输入的文本进行润色，使其更加专业、流畅、有吸引力。保持原意不变，但提升表达质量。并且除了给用户润色后不需要你再回复任何一个字 \" +\n" +
+                        "                        \"不需要询问用户还需要其他帮助什么的 "))
+                .user(textDTO.getText())
+                .call()
+                .content();
+        
+        log.info("AI润色：输入={}, 输出={}", textDTO.getText(), content);
+        return content;
     }
 
 
