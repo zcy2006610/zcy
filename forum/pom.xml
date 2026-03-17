@@ -26,6 +26,10 @@
 
 
     <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-websocket</artifactId>
+        </dependency>
         <!-- 多数据源依赖（有这个，就必须按下面改） -->
         <dependency>
             <groupId>com.baomidou</groupId>
