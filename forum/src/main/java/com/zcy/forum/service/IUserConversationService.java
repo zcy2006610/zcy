@@ -16,7 +16,7 @@ import java.util.List;
  */
 public interface IUserConversationService extends IService<UserConversation> {
 
-    List<UserConversationVO> getConversationList(Long userId);
+    List<UserConversationVO> getConversationList(Long userId,Long lastSeq);
 
     void clearUnread(Long userId, String conversationId);
 

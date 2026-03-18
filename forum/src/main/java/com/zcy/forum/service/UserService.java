@@ -19,11 +19,11 @@ public interface UserService extends IService<Users> {
 
     String loginWithCode(UserLoginDTO userLoginDTO);
 
-    UserInfoVO getUserInfo();
+    UserInfoVO getUserInfo(Long userId);
 
     void logout();
 
-    void updateInfo(UserInfoUpdateDTO updateDTO);
+    void updateInfo(UserInfoUpdateDTO updateDTO,Long userId);
 
     void updatePhone(UserPhoneUpdateDTO updateDTO);
 

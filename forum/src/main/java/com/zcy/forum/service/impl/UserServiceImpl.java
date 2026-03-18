@@ -5,6 +5,8 @@ import cn.hutool.core.util.RandomUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.zcy.forum.annotation.CacheEvict;
+import com.zcy.forum.annotation.CacheResult;
 import com.zcy.forum.constant.LoginConstant;
 import com.zcy.forum.constant.ResultConstant;
 import com.zcy.forum.domain.dto.UserInfoUpdateDTO;
@@ -132,11 +134,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper,Users> implements Us
     }
 
     @Override
-    public UserInfoVO getUserInfo() {
-        Long userId = UserContextHolder.getUserId();
-        if(userId==null){
-            throw new RuntimeException(ResultConstant.UNAUTHORIZED.getMsg());
-        }
+    @CacheResult(key = "#userId",expire = 333L,unit = TimeUnit.SECONDS,prefix = "user:info:cache:")
+    public UserInfoVO getUserInfo(Long userId) {
         LambdaQueryWrapper<Users> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Users::getId,userId);
         Users users = userMapper.selectOne(wrapper);
@@ -151,12 +150,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper,Users> implements Us
     }
 
     @Override
-    public void updateInfo(UserInfoUpdateDTO updateDTO) {
-        Long userId = UserContextHolder.getUserId();
-        if (userId == null) {
-            throw new RuntimeException(ResultConstant.UNAUTHORIZED.getMsg());
-        }
-
+    @CacheEvict(key = "#userId",prefix = "user:info:cache:")
+    public void updateInfo(UserInfoUpdateDTO updateDTO,Long userId) {
         // 检查用户名是否已被其他用户使用
         if (StringUtils.hasText(updateDTO.getUsername())) {
             LambdaQueryWrapper<Users> wrapper = new LambdaQueryWrapper<Users>()

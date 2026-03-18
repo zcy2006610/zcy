@@ -8,6 +8,8 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.zcy.forum.annotation.CacheEvict;
+import com.zcy.forum.annotation.CacheResult;
 import com.zcy.forum.common.PageResult;
 import com.zcy.forum.domain.dto.*;
 import com.zcy.forum.domain.entity.Categories;
@@ -55,6 +57,7 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Posts> implements P
 
 
     @Override
+    @CacheResult(key = "#id",prefix = "post:info:cache:",expire = 130)
     public PostDetailVo detail(Long id) {
         Posts posts = query().eq("id", id).one();
         PostDetailVo postDetailVo = new PostDetailVo();
@@ -150,7 +153,7 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Posts> implements P
     }
 
     @Override
-    @Transactional
+    @CacheEvict(key = "#updateDTO.id",prefix = "post:info:cache:")
     public void updatePost(PostUpdateDTO updateDTO) {
         Long userId = UserContextHolder.getUserId();
         if (userId == null) {
@@ -212,7 +215,7 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Posts> implements P
     }
 
     @Override
-    @Transactional
+    @CacheEvict(key = "#id",prefix = "post:info:cache:")
     public void logicDelete(Long id) {
         Long userId = UserContextHolder.getUserId();
         if (userId == null) {
@@ -237,12 +240,8 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Posts> implements P
     }
 
     @Override
-    public List<PostsVo> queryMyPost() {
-        Long userId = UserContextHolder.getUserId();
-        if (userId == null) {
-            throw new RuntimeException("用户未登录");
-        }
-
+    @CacheResult(prefix = "my:post:cache:",key ="#userId")
+    public List<PostsVo> queryMyPost(Long userId) {
         // 查询用户发布的所有帖子（状态为正常的）
         QueryWrapper<Posts> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("user_id", userId)
@@ -260,7 +259,7 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Posts> implements P
     }
 
     @Override
-    @Transactional
+    @CacheEvict(key = "#editDTO.id",prefix = "post:info:cache:")
     public void editMyPost(PostEditDTO editDTO) {
         Long userId = UserContextHolder.getUserId();
         if (userId == null) {
@@ -316,6 +315,10 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Posts> implements P
     }
 
     @Override
+    @CacheResult(
+            key = "#pageNum + ':' + #pageSize + ':' + (#params['categoryId']?:0)",
+            prefix = "post:page:"
+    )
     public PageResult<PostsVo> getPage(Integer pageNum, Integer pageSize, Map<String, Object> params) {
         // 1. 参数校验和默认值设置
         if (pageNum == null || pageNum <= 0) {

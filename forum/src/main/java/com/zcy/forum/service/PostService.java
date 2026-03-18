@@ -29,7 +29,7 @@ public interface PostService extends IService<Posts> {
 
     void logicDelete(Long id);
 
-    List<PostsVo> queryMyPost();
+    List<PostsVo> queryMyPost(Long userId);
 
     void editMyPost(PostEditDTO editDTO);
 

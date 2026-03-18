@@ -12,6 +12,7 @@ import com.zcy.forum.domain.vo.PostDraftsVo;
 import com.zcy.forum.domain.vo.PostResponseVo;
 import com.zcy.forum.domain.vo.PostsVo;
 import com.zcy.forum.service.PostService;
+import com.zcy.forum.utils.UserContextHolder;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
@@ -109,8 +110,12 @@ public class PostController {
     @Operation(summary = "查询我发布过的帖子")
     @RequireLogin
     public Result<List<PostsVo>> queryMyPost(){
+        Long userId = UserContextHolder.getUserId();
+        if (userId == null) {
+            throw new RuntimeException("用户未登录");
+        }
         try {
-            List<PostsVo> posts = postService.queryMyPost();
+            List<PostsVo> posts = postService.queryMyPost(userId);
             return Result.ok(posts);
         } catch (Exception e) {
             log.error("查询我的帖子失败: {}", e.getMessage(), e);

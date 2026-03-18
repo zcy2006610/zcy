@@ -1,5 +1,6 @@
 package com.zcy.forum.service;
 
+import com.zcy.forum.domain.dto.UserMessageDTO;
 import com.zcy.forum.domain.entity.ConversationMessage;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.zcy.forum.domain.vo.ConversationMessageVO;
@@ -18,5 +19,9 @@ import java.util.List;
 public interface IConversationMessageService extends IService<ConversationMessage> {
 
 
-    List<ConversationMessage> pullNewMessage(String conversationId, Long lastSeq);
+    List<UserMessageDTO> pullNewMessage(String conversationId, Long lastTime);
+
+    List<UserMessageDTO> pullHistoryMessage(String conversationId, Long lastMsgTime, Integer size);
+
+    void readMessage(String msgId);
 }
