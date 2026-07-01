@@ -14,7 +14,7 @@ spring:
         prefetch: 10           # 限流，防止消息暴冲
   ai:
     dashscope:
-      api-key: ${API_KEY}
+      api-key: sk-19b7a926d3fc488383b87efd8ec81f7a
       chat:
         options:
           model: qwen-plus
@@ -24,7 +24,7 @@ spring:
     openai: #openai配置
       base-url: https://dashscope.aliyuncs.com/compatible-mode #阿里百炼api地址
       #      base-url: https://api.chatanywhere.tech #api地址
-      api-key: ${API_KEY} #读取环境变量中的阿里百炼 api key
+      api-key: sk-19b7a926d3fc488383b87efd8ec81f7a #读取环境变量中的阿里百炼 api key
       #      api-key: ${OPENAI_API_KEY} #读取环境变量中的api key
       chat:
         options:
@@ -208,77 +208,3 @@ minio:
   accessKey: minioadmin            # 默认账号
   secretKey: minioadmin            # 默认密码
   bucketName: avatar               # 已创建的桶名
-
-app:
-  chat:
-    # 是否开启“推荐追问问题”能力。
-    # 开启后，主回答生成完成后会额外调用一次模型，产出最多 3 个可继续追问的问题。
-    recommendation-enabled: true
-    # 单次对话运行过程中，模型最多允许被调用多少次。
-    # 这是单次 run 级别的保护阈值，用来避免 ReAct 循环失控。
-    max-model-calls-per-run: 8
-    # 同一个会话线程累计允许的模型调用上限。
-    # 这个限制跨多轮对话生效，用来限制某个 conversationId 长期占用过多资源。
-    max-model-calls-per-thread: 40
-    # 单次对话运行过程中，工具最多允许被调用多少次。
-    # 当前主要限制的是 tavily_search 这类外部联网工具，避免频繁搜索。
-    max-tool-calls-per-run: 6
-    # 同一个会话线程累计允许的工具调用上限。
-    # 用来控制某个会话在长期多轮聊天中的外部工具使用量。
-    max-tool-calls-per-thread: 30
-    # 生成推荐问题时，最多回看最近多少轮历史问答。
-    # 数值越大，上下文越完整，但推荐问题生成的提示词也会更长。
-    history-preview-turns: 4
-    # 主对话助手的系统提示词。
-    # ReactAgent 每次对话都会带上这段指令，用来约束回答风格、工具使用策略和安全边界。
-    system-prompt: |
-      你是 JavaUp 的智能对话助手。
-      你的目标是帮助用户获得可靠、结构化、可直接使用的答案。
-      
-      回答原则：
-      1. 对于明显具有时效性、事实性、需要外部验证的问题，优先调用搜索工具。尤其是涉及“今天、明天、昨天、现在、当前、最新、本周、本月、今年”等相对时间的问题，必须以当前日期为准理解，并优先搜索核实。
-      2. 如果工具结果不足以支撑结论，要明确说明不确定性，不要编造事实。
-      3. 回答尽量结构化、清晰、简洁，适合直接返回给前端展示。
-      4. 不要在最终答案中暴露工具调用细节或内部推理格式。
-      5. 当已有信息足够时，直接给出最终答案，不要重复调用工具。
-    # 推荐问题生成模型使用的独立提示词。
-    # 这部分不参与主回答，只在主回答结束后用于生成 follow-up questions。
-    recommendation-prompt: |
-      你是推荐问题生成助手。
-      请根据最近几轮对话和最新一轮问答，生成 3 个适合继续追问的中文问题。
-      
-      要求：
-      1. 返回 JSON 数组字符串，例如 ["问题1","问题2","问题3"]。
-      2. 每个问题都要自然、具体、可继续追问。
-      3. 不要和当前问题重复。
-      4. 每个问题尽量控制在 20 个字以内。
-
-  tavily:
-    # 是否启用 Tavily 联网搜索工具。
-    # 关闭后，ReactAgent 即使判断需要搜索，也无法调用该工具。
-    enabled: true
-    # Tavily API 的服务地址。
-    # 如果后续切换代理或企业网关，可以改这里。
-    base-url: https://api.tavily.com
-    # Tavily 搜索接口路径。
-    # 默认使用官方的 /search 端点。
-    search-path: /search
-    # Tavily 的 API Key。
-    # 推荐通过环境变量注入，避免把真实密钥写进配置文件。
-    api-key: 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
-    # 搜索主题类型。
-    # Tavily 当前只接受 general、news、finance 三个枚举值。
-    # 一般场景优先用 general。
-    topic: general
-    # 搜索深度。
-    # advanced 会更重一些，但通常能拿到更完整的搜索结果。
-    search-depth: advanced
-    # 单次搜索最多返回多少条候选结果。
-    # 结果越多，引用来源越全，但也会增加模型处理成本。
-    max-results: 5
-    # 是否让 Tavily 在结果中返回它生成的 answer 摘要。
-    # 当前我们主要使用 results 里的来源信息，但 answer 也会被工具结果带回模型。
-    include-answer: true
-    # 是否返回网页原始全文内容。
-    # 默认关闭，避免响应过大；如果后续需要做更深的抽取分析，可以再打开。
-    include-raw-content: false
